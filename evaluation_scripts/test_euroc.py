@@ -55,7 +55,7 @@ def image_stream(datapath, image_size=[320, 512], stereo=False, stride=1):
 
     # read all png images in folder
     images_left = sorted(glob.glob(os.path.join(datapath, 'mav0/cam0/data/*.png')))[::stride]
-    images_right = [x.replace('cam0', 'cam1') for x in images_left]
+    imayges_right = [x.replace('cam0', 'cam1') for x in images_left]
 
     data_list = []
     for t, (imgL, imgR) in enumerate(zip(images_left, images_right)):

@@ -155,4 +155,7 @@ cache
 data
 figures/*.pdf
 
-
+.droid/*
+droid_vkitti_experiments/*
+droid_euroc_experiments/*
+reconstructions/*

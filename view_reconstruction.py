@@ -13,9 +13,18 @@ from lietorch import SE3
 
 from cuda_timer import CudaTimer
 
+import cv2
+
 def view_reconstruction(filename: str, filter_thresh = 0.005, filter_count=2):
     reconstruction_blob = torch.load(filename)
     images = reconstruction_blob["images"].cuda()[...,::2,::2]
+
+    # i = 0
+    # img = images[i].permute(1, 2, 0).cpu().numpy().astype('uint8')
+    # img_bgr = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+    # cv2.imshow("Image", img_bgr)
+    # cv2.waitKey(0)  
+    # cv2.destroyAllWindows()
     disps = reconstruction_blob["disps"].cuda()[...,::2,::2]
     poses = reconstruction_blob["poses"].cuda()
     intrinsics = 4 * reconstruction_blob["intrinsics"].cuda()
@@ -57,7 +66,6 @@ def view_reconstruction(filename: str, filter_thresh = 0.005, filter_count=2):
 
     vis.run()
     vis.destroy_window()
-
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
