@@ -316,7 +316,7 @@ def save_reconstruction_360v2(filename: str, filter_thresh=0.005, filter_count=2
     """
     
     # Create directory structure
-    sparse_dir = os.path.join(output_dir, "sparse", "0")
+    sparse_dir = os.path.join(output_dir, "sparse", "0_txt")
     os.makedirs(sparse_dir, exist_ok=True)
 
     print(f"📂 Creating Mip-NeRF 360_v2 format structure at {output_dir}")
@@ -324,7 +324,7 @@ def save_reconstruction_360v2(filename: str, filter_thresh=0.005, filter_count=2
     for factor in downsample_factors:
         print(f"   ├── images_{factor}/")
     print(f"   ├── poses_bounds.npy")
-    print(f"   └── sparse/0/")
+    print(f"   └── sparse/0_txt/")
 
     # Load reconstruction
     print(f"\n🔄 Loading DROID-SLAM reconstruction from {filename}...")
@@ -367,6 +367,10 @@ def save_reconstruction_360v2(filename: str, filter_thresh=0.005, filter_count=2
         pose_mat = SE3(poses[i:i+1]).inv().matrix().cpu().numpy()[0]
         R = pose_mat[:3, :3]
         t = pose_mat[:3, 3]
+
+        # F = np.diag([1, 1, -1])   # flip Z axis
+        # R = F @ R
+        # t = F @ t
         
         # Store for poses_bounds.npy
         poses_list.append((R, t))
@@ -421,6 +425,7 @@ def save_reconstruction_360v2(filename: str, filter_thresh=0.005, filter_count=2
 
     mask = (counts >= filter_count) & (disps > 0.25 * disps.mean())
     points_np = points[mask].cpu().numpy()
+    # points_np[:, 2] *= -1
     colors_np = np.clip(colors[mask].cpu().numpy(), 0, 1)
 
     # Subsample points if max_points is specified
@@ -454,7 +459,7 @@ def save_reconstruction_360v2(filename: str, filter_thresh=0.005, filter_count=2
             }
 
     # Write COLMAP files
-    print(f"\n💾 Writing COLMAP {output_format.upper()} files to sparse/0/...")
+    print(f"\n💾 Writing COLMAP {output_format.upper()} files to sparse/0_txt/...")
     
     file_ext = f".{output_format}"
     cameras_file = os.path.join(sparse_dir, f"cameras{file_ext}")

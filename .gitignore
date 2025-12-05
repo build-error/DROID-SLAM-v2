@@ -159,3 +159,4 @@ figures/*.pdf
 droid_vkitti_experiments/*
 droid_euroc_experiments/*
 reconstructions/*
+results/*

@@ -1,8 +1,107 @@
 # DROID-SLAM
 
+# Installation Notes
+## For Jetson AGX ORIN
+- don't change the CUDA version present in the jetpack
+- for jetson 6 > cuda 12.6 is default, use that to setup torch and torch vision
+- python3.10> is better for compiling the entire project without much changes
+- [Pytorch for Jetson](https://forums.developer.nvidia.com/t/pytorch-for-jetson/72048) : follow this discussion forum to install torch and torchvision for jetson agx orin
+- I have made some changes for setup.py for lietorch so that i can compile for the jetson agx orin architure gpu directly, and for any architecture if you want setup.py, just ask chatgpt to create a new setup.py from the existing setup.py file as it will make the appropiate changes for any given architecture.
+
+```python
+from setuptools import setup
+from torch.utils.cpp_extension import BuildExtension, CUDAExtension
+import os.path as osp
+
+ROOT = osp.dirname(osp.abspath(__file__))
+
+# Arch for Jetson AGX Orin → Ampere GPU (sm_87)
+NVCC_FLAGS = [
+    "-O3",
+    "-std=c++17",
+    "--use_fast_math",
+    "-U__CUDA_NO_HALF_OPERATORS__",
+    "-U__CUDA_NO_HALF_CONVERSIONS__",
+    "-U__CUDA_NO_HALF2_OPERATORS__",
+
+    # Jetson AGX Orin specific
+    "-gencode=arch=compute_87,code=sm_87",
+]
+
+CXX_FLAGS = [
+    "-O3",
+    "-std=c++17",
+]
+
+setup(
+    name="lietorch",
+    version="0.2",
+    description="Lie Groups for PyTorch",
+    author="teedrz",
+    packages=["lietorch"],
+    ext_modules=[
+        CUDAExtension(
+            "lietorch_backends",
+            include_dirs=[
+                osp.join(ROOT, "lietorch/include"),
+                osp.join(ROOT, "eigen")
+            ],
+            sources=[
+                "lietorch/src/lietorch.cpp",
+                "lietorch/src/lietorch_gpu.cu",
+                "lietorch/src/lietorch_cpu.cpp"
+            ],
+            extra_compile_args={
+                "cxx": CXX_FLAGS,
+                "nvcc": NVCC_FLAGS,
+            }
+        ),
+
+        CUDAExtension(
+            "lietorch_extras",
+            sources=[
+                "lietorch/extras/altcorr_kernel.cu",
+                "lietorch/extras/corr_index_kernel.cu",
+                "lietorch/extras/se3_builder.cu",
+                "lietorch/extras/se3_inplace_builder.cu",
+                "lietorch/extras/se3_solver.cu",
+                "lietorch/extras/extras.cpp",
+            ],
+            extra_compile_args={
+                "cxx": CXX_FLAGS,
+                "nvcc": NVCC_FLAGS,
+            }
+        )
+    ],
+    cmdclass={"build_ext": BuildExtension}
+)
+```
+
+- numpy<2.0.0: use numpy 1.26.4, get the wheel file from pypi for `aarch64` architecture
+
+- for gsplat, use the original [gsplat repo](https://github.com/nerfstudio-project/gsplat), with `simple_trainer.py`.
+
+## Utils
+- `droid2colmap.py` : This converts `.pth` to Mip-Nerf colmap format `360v2`, as the gsplat `simple_trainer.py` takes in this format only.
+
+- `view_gsplat_viser.py` : This helps visualize gsplat output using viser from `.ply` file.
+
+- `view_reconstruction.py` : This helps visualize `.pth` file using open3d 
+
+- `view_reconstruction_pyvista.py` : This helps visualize `.pth` file using pyvista, as sometimes open3d gives problems.
+
+- `demo.py` : It's the main code to run droid-slam to generate output. Its runs on monocular dataset for now. 
+
+# Issues 
+
+- DROID-SLAM creates a dense point cloud, but gsplat takes a lot of time to interate over all the points.
+- Also because of the dense point cloud output, it takes a lot of ram just to find tracks (2D to 3D correspondence), which is required if I want to open my custom colmap on COLMAP GUI application.
+- If you just want to create 3d reconstruction using gsplat, then tracks are not required.
+- when using gsplat you dont need tracks, droid2comlmap.py can make colmap without tracks as well.
+- First couple of interation, the reconstruction is fine, but in later interations, random gaussians start to generate and loss just stuck at 0.2 - 0.3, not optimizing further.
+- Also, droid-slam own visualizer doesn't seem to work well, either in my laptop or jetson. This is a very common issue, and running code without visualization `--disable_vis`.
 
 <!-- <center><img src="misc/DROID.png" width="640" style="center"></center> -->
-
 
 [![IMAGE ALT TEXT HERE](misc/screenshot.png)](https://www.youtube.com/watch?v=GG78CSlSHSA)
 
